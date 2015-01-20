@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# Nagios v3 plugin for monitoring the postfix queue
+# Copyright (C) 2015  Radu Rendec <radu.rendec@mindbit.ro>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+STATUS_OK=0
+STATUS_WARNING=1
+STATUS_CRITICAL=2
+STATUS_UNKNOWN=3
+
+critical_threshold=10000
+warning_threshold=5000
+
+progname=$(basename "$0")
+queue_directory=$(postconf -h queue_directory 2>/dev/null)
+
+print_usage() {
+	echo "Usage: $PROGNAME [OPTION]"
+	echo 
+	echo "Options: "
+	echo " -c NUMBER"
+	echo "    Critical threshold, defaults to $critical_threshold"
+	echo
+	echo " -w NUMBER"
+	echo "    Warning threshold, defaults to $warning_threshold"
+	echo
+	echo " -h"
+	echo "    Display help and exit"
+}
+
+while getopts c:hw: opt; do
+	case "$opt" in
+	c)
+		critical_threshold="$OPTARG"
+		;;
+	w)
+		warning_threshold="$OPTARG"
+		;;
+	h)
+		print_usage
+		exit
+		;;
+	?)
+		print_usage
+		exit $STATUS_UNKNOWN
+	esac
+done
+
+for dir in active maildrop deferred bounce; do
+	path="$queue_directory/$dir"
+	if [ -d "$path" ]; then
+		count=$(find "$path" -type f -print | wc -l)
+		dir_status="OK"
+		if [ $count -ge $warning_threshold ]; then
+			dir_status="WARNING"
+		fi
+		if [ $count -ge $critical_threshold ]; then
+			dir_status="CRITICAL"
+		fi
+	else
+		count="?"
+		dir_status="UNKNOWN"
+	fi
+
+	output="$output$dir: $dir_status ($count); "
+	dir_status="STATUS_$dir_status"
+	dir_status=${!dir_status}
+	if [[ -z "$exit_status" || $dir_status -gt $exit_status ]]; then
+		exit_status=$dir_status
+	fi
+done
+
+echo $output
+exit $exit_status
