@@ -1,0 +1,32 @@
+1. Installing with nrpe
+
+1.1. sudo configuration
+
+Use 'visudo' (or edit /etc/sudoers in any other suitable way), and add
+the following lines:
+
+For 32-bit systems:
+
+nrpe ALL=(postfix) NOPASSWD: /usr/lib/nagios/plugins/check_postfix_queue
+Defaults!/usr/lib/nagios/plugins/check_postfix_queue !requiretty
+
+For 64-bit systems:
+
+nrpe ALL=(postfix) NOPASSWD: /usr/lib64/nagios/plugins/check_postfix_queue
+Defaults!/usr/lib64/nagios/plugins/check_postfix_queue !requiretty
+
+If your system (main sudo configuration) supports, the lines above may
+be added to a standalone file in /etc/sudoers.d, for instance
+/etc/sudoers.d/check_postfix_queue.
+
+1.2. nrpe configuration
+
+Add the following line to /etc/nagios/nrpe.cfg.
+
+For 32-bit systems:
+
+command[check_postfix_queue]=sudo -u postfix /usr/lib/nagios/plugins/check_postfix_queue
+
+For 64-bit systems:
+
+command[check_postfix_queue]=sudo -u postfix /usr/lib64/nagios/plugins/check_postfix_queue
