@@ -17,6 +17,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+PATH=$PATH:/sbin:/usr/sbin
+
 STATUS_OK=0
 STATUS_WARNING=1
 STATUS_CRITICAL=2
@@ -62,7 +64,7 @@ done
 
 for dir in active maildrop deferred bounce; do
 	path="$queue_directory/$dir"
-	if [ -d "$path" ]; then
+	if [[ -d "$path" && -r "$path" ]]; then
 		count=$(find "$path" -type f -print | wc -l)
 		dir_status="OK"
 		if [ $count -ge $warning_threshold ]; then
